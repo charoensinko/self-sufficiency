@@ -1,10 +1,14 @@
+import type { Metadata } from "next";
+import { ChatScreen } from "@/features/ai/components/chat-screen";
+
+export const metadata: Metadata = {
+  title: "AI ที่ปรึกษา",
+};
+
 export default function AiPage() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
-      <h1 className="text-2xl font-bold">AI ที่ปรึกษา</h1>
-      <p className="mt-1 text-muted-foreground">
-        แชทวิเคราะห์ที่ดินและงบประมาณ (AI Copilot) — กำลังพัฒนา
-      </p>
+    <main className="mx-auto h-[calc(100dvh-5rem)] max-w-lg">
+      <ChatScreen />
     </main>
   );
 }

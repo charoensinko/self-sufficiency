@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { AI_PREFILL_KEY } from "@/lib/constants";
 import { formatBaht, formatNumber } from "@/lib/format";
 import {
   fetchChecklistProgress,
@@ -24,9 +25,6 @@ import {
   type LandScore,
   type LandWithScore,
 } from "../types";
-
-/** key ใน sessionStorage ที่หน้าแชท AI (Step 5) จะอ่านไปเป็นข้อความตั้งต้น */
-export const AI_PREFILL_KEY = "kasiansuk-ai-prefill";
 
 const MAX_COMPARE = 4;
 
