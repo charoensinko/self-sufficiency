@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image";
+import { fetchHouseholdId } from "@/lib/household";
 import type {
   BudgetCategory,
   ExpenseInput,
@@ -10,22 +11,6 @@ import type {
 
 const EXPENSE_SELECT =
   "*, budget_categories(name), land_candidates(name)";
-
-export async function fetchHouseholdId(): Promise<string> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("ยังไม่ได้เข้าสู่ระบบ");
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("household_id")
-    .eq("id", user.id)
-    .single();
-  if (error) throw error;
-  return data.household_id as string;
-}
 
 export async function fetchHousehold(): Promise<Household> {
   const supabase = createClient();

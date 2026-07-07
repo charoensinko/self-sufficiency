@@ -6,6 +6,13 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === "development",
 });
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  images: {
+    // รูปในแอปเสิร์ฟผ่าน signed URL ของ Supabase Storage
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co" },
+    ],
+  },
+};
 
 export default withPWA(nextConfig);
