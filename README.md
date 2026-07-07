@@ -123,7 +123,12 @@ vercel env add NEXT_PUBLIC_APP_URL production   # = https://self-sufficiency.ver
 vercel --prod
 ```
 
-deploy ครั้งถัดไป: รัน `vercel --prod` อย่างเดียวพอ
+### Deploy อัตโนมัติผ่าน GitHub
+
+โปรเจกต์เชื่อมกับ https://github.com/charoensinko/self-sufficiency แล้ว —
+**แค่ `git push` ขึ้น branch `main` Vercel จะ build + deploy production ให้อัตโนมัติ**
+(ไม่ต้องรัน `vercel --prod` เอง) ดูสถานะ build ได้ที่ Vercel dashboard
+ส่วน branch อื่นจะได้ preview URL แยกสำหรับทดลองก่อนรวมเข้า main
 
 ### Production checklist หลัง deploy
 
