@@ -96,6 +96,44 @@ supabase/
 docs/               # แผนแม่บท สเปก และบันทึกการตัดสินใจ
 ```
 
+## Deploy ขึ้น Vercel
+
+แอปตัวจริงอยู่ที่ **https://self-sufficiency.vercel.app**
+
+ขั้นตอน deploy (ทำครั้งแรกครั้งเดียว):
+
+```bash
+npm install -g vercel
+vercel login          # ยืนยันตัวตนผ่านเบราว์เซอร์
+vercel link --yes     # ผูกโฟลเดอร์กับโปรเจกต์บน Vercel
+```
+
+ตั้งค่า environment variables ฝั่ง production (ค่าเดียวกับ `.env.local`):
+
+```bash
+vercel env add NEXT_PUBLIC_SUPABASE_URL production
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
+vercel env add OPENROUTER_API_KEY production
+vercel env add NEXT_PUBLIC_APP_URL production   # = https://self-sufficiency.vercel.app
+```
+
+จากนั้น deploy:
+
+```bash
+vercel --prod
+```
+
+deploy ครั้งถัดไป: รัน `vercel --prod` อย่างเดียวพอ
+
+### Production checklist หลัง deploy
+
+- [ ] เปิด URL แล้วถูกพาไปหน้าเข้าสู่ระบบ, login ด้วยผู้ใช้จริงได้
+- [ ] เพิ่ม/ดูแปลงที่ดิน ให้คะแนน ติ๊ก checklist ได้ รูปแสดงปกติ
+- [ ] บันทึกรายจ่ายแล้วยอดในภาพรวมขยับ
+- [ ] แชท AI ตอบแบบ streaming และอ้างข้อมูลจริง, ยอดใช้จ่ายขึ้นในหน้าตั้งค่า
+- [ ] ติดตั้งเป็นแอปจากมือถือ (Add to Home Screen) ไอคอนต้นกล้าแสดงถูกต้อง
+- [ ] เปิดโหมดเครื่องบินแล้วเข้าแอป → เจอหน้า "ไม่มีอินเทอร์เน็ต"
+
 ## หมายเหตุ Storage
 
 รูปทุกไฟล์เก็บใน bucket แบบ private โดยใช้ path ขึ้นต้นด้วย household id:
