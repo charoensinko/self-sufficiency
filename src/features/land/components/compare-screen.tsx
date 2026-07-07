@@ -131,7 +131,10 @@ export function CompareScreen() {
   }
 
   function handleSendToAi() {
-    sessionStorage.setItem(AI_PREFILL_KEY, buildAiPrompt());
+    sessionStorage.setItem(
+      AI_PREFILL_KEY,
+      JSON.stringify({ message: buildAiPrompt(), task: "compare" })
+    );
     router.push("/ai");
   }
 

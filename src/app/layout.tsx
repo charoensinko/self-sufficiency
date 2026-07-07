@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   },
   description:
     "แอปคู่ใจวางแผนเกษียณสู่วิถีเกษตรพอเพียง — เลือกซื้อที่ดิน คุมงบประมาณ ปรึกษา AI",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "เกษียณสุข",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

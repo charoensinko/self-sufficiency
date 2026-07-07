@@ -144,18 +144,30 @@ export function ChatScreen() {
     [activeId, deep, loadConversations, sending]
   );
 
-  // รับ prompt จากหน้าเปรียบเทียบแปลง → เริ่มบทสนทนาใหม่และส่งทันที
+  // รับ prompt จากหน้าอื่น (เปรียบเทียบแปลง/แดชบอร์ด) → เริ่มบทสนทนาใหม่และส่งทันที
   useEffect(() => {
     if (prefillHandled.current) return;
     prefillHandled.current = true;
-    const prefill = sessionStorage.getItem(AI_PREFILL_KEY);
-    if (prefill) {
-      sessionStorage.removeItem(AI_PREFILL_KEY);
-      setActiveId(null);
-      setMessages([]);
-      setDeep(true);
-      void send(prefill, [], "compare");
+    const raw = sessionStorage.getItem(AI_PREFILL_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(AI_PREFILL_KEY);
+
+    let message = raw;
+    let task: ChatTask = "chat";
+    try {
+      const parsed = JSON.parse(raw) as { message?: string; task?: string };
+      if (parsed.message) {
+        message = parsed.message;
+        task = parsed.task === "compare" ? "compare" : "chat";
+      }
+    } catch {
+      // ค่าเก่าเป็นข้อความล้วน — ใช้ตรงๆ
     }
+
+    setActiveId(null);
+    setMessages([]);
+    if (task === "compare") setDeep(true);
+    void send(message, [], task);
   }, [send]);
 
   async function openConversation(conversation: Conversation) {
