@@ -57,7 +57,10 @@ export function BudgetScreen() {
         <BudgetOverview totals={totals} summaries={summaries} />
       </TabsContent>
 
-      <TabsContent value="record" className="mt-4 space-y-4">
+      <TabsContent
+        value="record"
+        className="mt-4 space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0"
+      >
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">บันทึกรายจ่ายใหม่</CardTitle>

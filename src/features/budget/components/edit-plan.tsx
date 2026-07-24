@@ -111,28 +111,30 @@ export function EditPlan({
 
       <Separator />
 
-      {categories.map((category) => (
-        <div key={category.id} className="space-y-2">
-          <Label htmlFor={`plan-${category.id}`} className="text-base">
-            {category.name}
-          </Label>
-          <Input
-            id={`plan-${category.id}`}
-            type="number"
-            inputMode="numeric"
-            min="0"
-            step="1000"
-            value={amounts[category.id] ?? ""}
-            onChange={(e) =>
-              setAmounts((prev) => ({
-                ...prev,
-                [category.id]: e.target.value,
-              }))
-            }
-            className="h-12 text-base"
-          />
-        </div>
-      ))}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {categories.map((category) => (
+          <div key={category.id} className="space-y-2">
+            <Label htmlFor={`plan-${category.id}`} className="text-base">
+              {category.name}
+            </Label>
+            <Input
+              id={`plan-${category.id}`}
+              type="number"
+              inputMode="numeric"
+              min="0"
+              step="1000"
+              value={amounts[category.id] ?? ""}
+              onChange={(e) =>
+                setAmounts((prev) => ({
+                  ...prev,
+                  [category.id]: e.target.value,
+                }))
+              }
+              className="h-12 text-base"
+            />
+          </div>
+        ))}
+      </div>
 
       <div
         className={cn(
