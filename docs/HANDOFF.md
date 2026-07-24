@@ -9,7 +9,7 @@
 - **Production**: https://self-sufficiency.vercel.app (Vercel project: `charoensinkos-projects/self-sufficiency`)
 - **GitHub**: https://github.com/charoensinko/self-sufficiency (branch `main`) — **เชื่อม auto-deploy แล้ว: `git push` = deploy production อัตโนมัติ** ไม่ต้องรัน `vercel --prod`
 - **Supabase**: โปรเจกต์ `self-sufficiency` id `cbrpqjekfzzmsrhgajvs` (ap-northeast-1) — migrations 3 ไฟล์ + seed apply แล้ว, ผู้ใช้ 2 คนสร้างแล้ว, login ทดสอบผ่าน
-- **UI เป็น responsive สองโหมดแล้ว**: จอเล็ก = Bottom Nav เดิม, จอ ≥1024px = Sidebar ซ้าย (เมนูรวมศูนย์ `src/components/nav-items.ts`, shell ที่ `src/components/app-shell.tsx`)
+- **UI เป็น responsive สองโหมดแล้ว**: จอเล็ก = Bottom Nav เดิม, จอ ≥1024px = Sidebar ซ้าย (เมนูรวมศูนย์ `src/components/nav-items.ts`, shell ที่ `src/components/app-shell.tsx`) — **desktop layout เสร็จครบทุกหน้าแล้ว**: แดชบอร์ด 2×2, รายการแปลง grid, รายละเอียดแปลง (ข้อมูล|แผนที่ คู่กัน + คะแนน/เช็คลิสต์ 2 คอลัมน์), ฟอร์มแปลง 2 คอลัมน์, งบประมาณ 2 คอลัมน์ทั้ง 3 แท็บ
 - ทุก commit ผ่าน build+lint ก่อนเสมอ — ดู `git log --oneline`
 - ผู้ใช้ทดสอบผ่านแล้วทุกโมดูล รวมถึงติดตั้ง PWA บนมือถือ
 
@@ -36,7 +36,6 @@
 
 - **Dev Phase 2 "Project OS"** (บริหารการก่อสร้างหลังซื้อที่ดิน) — สเปกภาพรวมใน `docs/webapp-concept.md` ; **ห้ามเริ่มเองจนกว่าผู้ใช้ยืนยัน scope**
 - **การตัดสินใจที่ค้างไว้ (คุยแล้ว ยังไม่ทำ)**: เมนูใหม่ใน Phase 2 จะใช้แนว "เพิ่มแท็บที่ 5 ชื่อ เพิ่มเติม + สลับแท็บหลักตามช่วงชีวิต" — เพิ่มที่ `src/components/nav-items.ts` ที่เดียวขึ้นทั้งสองโหมด
-- **Desktop layout ระดับ 2 (ค้างบางส่วน)**: แดชบอร์ดและรายการแปลงจัด grid แล้ว แต่หน้างบประมาณ/รายละเอียดแปลง/ฟอร์ม ยังเป็นคอลัมน์เดียวตรงกลาง — รอผู้ใช้ใช้จริงแล้วชี้ว่าหน้าไหนอยากได้ layout คู่ซ้าย-ขวา
 - ค้างเล็กๆ: คอลัมน์ `ai_messages.image_paths` ยังไม่ใช้ (ตั้งใจ — ดู decisions.md)
 
 ## Suggested skills
