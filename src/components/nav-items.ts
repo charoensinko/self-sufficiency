@@ -1,6 +1,7 @@
 import {
   Hammer,
   Home,
+  LandPlot,
   MapPin,
   Menu,
   NotebookPen,
@@ -29,6 +30,7 @@ export const EXTRA_NAV_ITEMS: NavItem[] = [
   { href: "/project", label: "โครงการ", icon: Hammer },
   { href: "/journal", label: "บันทึกประจำวัน", icon: NotebookPen },
   { href: "/crops", label: "ปฏิทินปลูก", icon: Sprout },
+  { href: "/layout", label: "ผังแปลง", icon: LandPlot },
 ];
 
 export const MORE_NAV_ITEM: NavItem = {
