@@ -6,6 +6,7 @@ import {
   NotebookPen,
   Settings,
   Sparkles,
+  Sprout,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
 export const EXTRA_NAV_ITEMS: NavItem[] = [
   { href: "/project", label: "โครงการ", icon: Hammer },
   { href: "/journal", label: "บันทึกประจำวัน", icon: NotebookPen },
+  { href: "/crops", label: "ปฏิทินปลูก", icon: Sprout },
 ];
 
 export const MORE_NAV_ITEM: NavItem = {
