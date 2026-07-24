@@ -176,7 +176,11 @@ export function LandForm({
     PHOTO_TYPES.find((t) => t.value === type)?.label ?? type;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    // desktop: ข้อมูลแปลง | เนื้อที่และราคา คู่กัน, รูปภาพ+ปุ่มเต็มแถว (มือถือเรียงตามเดิม)
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0"
+    >
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">ข้อมูลแปลง</CardTitle>
@@ -398,7 +402,7 @@ export function LandForm({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="text-lg">รูปภาพ</CardTitle>
         </CardHeader>
@@ -445,7 +449,7 @@ export function LandForm({
           </p>
 
           {(existingPhotos.length > 0 || pendingPhotos.length > 0) && (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
               {existingPhotos.map((photo) => (
                 <div key={photo.id} className="relative aspect-square">
                   {photoUrls?.get(photo.storage_path) ? (
@@ -502,12 +506,16 @@ export function LandForm({
       </Card>
 
       {errorMessage && (
-        <p role="alert" className="text-base text-destructive">
+        <p role="alert" className="text-base text-destructive lg:col-span-2">
           {errorMessage}
         </p>
       )}
 
-      <Button type="submit" className="w-full" disabled={saving}>
+      <Button
+        type="submit"
+        className="w-full lg:col-span-2"
+        disabled={saving}
+      >
         {saving
           ? "กำลังบันทึก..."
           : editing
