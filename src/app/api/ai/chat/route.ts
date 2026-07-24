@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { splitDueTasks } from "@/features/project/types";
+import { computeStats, sqmToRai } from "@/features/layout/types";
+import type { LayoutElement } from "@/features/layout/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,6 +12,15 @@ const MODEL_HAIKU = "anthropic/claude-haiku-4.5";
 const MODEL_SONNET = "anthropic/claude-sonnet-4.5";
 const MODEL_GEMINI = "google/gemini-2.5-flash";
 const ALLOWED_MODELS = new Set([MODEL_HAIKU, MODEL_SONNET, MODEL_GEMINI]);
+
+// งานวิเคราะห์ (นอกจาก chat) ใช้ Sonnet เพราะต้องสังเคราะห์ข้อมูลหลายส่วน
+const ALLOWED_TASKS = new Set([
+  "chat",
+  "compare",
+  "weekly_summary",
+  "budget_check",
+  "next_tasks",
+]);
 
 const MAX_HISTORY = 20;
 const MAX_IMAGES = 3;
@@ -20,7 +32,7 @@ type ChatRequestBody = {
   images?: string[];
   /** ผู้ใช้เปิดโหมด "วิเคราะห์ลึก" */
   deep?: boolean;
-  task?: "chat" | "compare";
+  task?: string;
   modelOverride?: string | null;
 };
 
@@ -34,35 +46,69 @@ function pickModel(input: {
     return input.modelOverride;
   }
   if (input.hasImages) return MODEL_GEMINI;
-  if (input.deep || input.task === "compare") return MODEL_SONNET;
+  if (input.deep || input.task !== "chat") return MODEL_SONNET;
   return MODEL_HAIKU;
 }
 
 /** สรุปข้อมูลจริงจาก DB แบบกระชับสำหรับ system prompt — ดึงเฉพาะ field จำเป็น */
 async function buildContext(supabase: SupabaseClient): Promise<string> {
-  const [householdRes, landsRes, categoriesRes, expensesRes, templateCountRes, checkedRes] =
-    await Promise.all([
-      supabase.from("households").select("total_budget").single(),
-      supabase
-        .from("land_candidates")
-        .select(
-          "id, name, province, district, status, price_total, price_per_rai, area_rai, area_ngan, area_wa, deed_type, notes, land_scores(total_score, water_source, soil_quality, flood_risk, road_access, electricity, hospital_distance, community, price_value)"
-        )
-        .order("created_at")
-        .limit(20),
-      supabase
-        .from("budget_categories")
-        .select("id, name, planned_amount")
-        .order("sort_order"),
-      supabase.from("expenses").select("category_id, amount"),
-      supabase
-        .from("checklist_templates")
-        .select("id", { count: "exact", head: true }),
-      supabase
-        .from("land_checklist_items")
-        .select("land_id")
-        .eq("checked", true),
-    ]);
+  const [
+    householdRes,
+    landsRes,
+    categoriesRes,
+    expensesRes,
+    templateCountRes,
+    checkedRes,
+    phasesRes,
+    projectTasksRes,
+    journalRes,
+    plantingsRes,
+    layoutsRes,
+  ] = await Promise.all([
+    supabase.from("households").select("total_budget").single(),
+    supabase
+      .from("land_candidates")
+      .select(
+        "id, name, province, district, status, price_total, price_per_rai, area_rai, area_ngan, area_wa, deed_type, notes, land_scores(total_score, water_source, soil_quality, flood_risk, road_access, electricity, hospital_distance, community, price_value)"
+      )
+      .order("created_at")
+      .limit(20),
+    supabase
+      .from("budget_categories")
+      .select("id, name, planned_amount")
+      .order("sort_order"),
+    supabase.from("expenses").select("category_id, amount"),
+    supabase
+      .from("checklist_templates")
+      .select("id", { count: "exact", head: true }),
+    supabase
+      .from("land_checklist_items")
+      .select("land_id")
+      .eq("checked", true),
+    supabase
+      .from("project_phases")
+      .select("id, name, sort_order, status, duration_weeks")
+      .order("sort_order"),
+    supabase
+      .from("project_tasks")
+      .select("phase_id, title, is_milestone, done, due_date"),
+    supabase
+      .from("journal_entries")
+      .select("entry_date, content")
+      .order("entry_date", { ascending: false })
+      .limit(5),
+    supabase
+      .from("plantings")
+      .select(
+        "zone, quantity, status, planned_date, planted_date, expected_harvest_date, crops(name)"
+      )
+      .in("status", ["planned", "planted"])
+      .limit(15),
+    supabase
+      .from("farm_layouts")
+      .select("name, width_m, height_m, elements")
+      .limit(5),
+  ]);
 
   const lines: string[] = [];
   const statusLabel: Record<string, string> = {
@@ -140,10 +186,119 @@ async function buildContext(supabase: SupabaseClient): Promise<string> {
     );
   }
 
+  // --- โครงการ (แผนแม่บท 10 เฟส) ---
+  const phases = phasesRes.data ?? [];
+  const projectTasks = (projectTasksRes.data ?? []) as {
+    phase_id: string;
+    title: string;
+    is_milestone: boolean;
+    done: boolean;
+    due_date: string | null;
+  }[];
+  if (phases.length > 0) {
+    const statusText: Record<string, string> = {
+      not_started: "ยังไม่เริ่ม",
+      in_progress: "กำลังทำ",
+      done: "เสร็จแล้ว",
+    };
+    const current =
+      phases.find((p) => p.status === "in_progress") ??
+      phases.find((p) => p.status === "not_started");
+    lines.push("");
+    lines.push(
+      `## โครงการแผนแม่บท 10 เฟส (สถานะจริง: ยังไม่ได้ซื้อที่ดิน — เตรียมแผนล่วงหน้า)` +
+        (current
+          ? ` | เฟสปัจจุบัน/ถัดไป: เฟส ${current.sort_order} ${current.name}`
+          : "")
+    );
+    for (const phase of phases) {
+      const phaseTasks = projectTasks.filter((t) => t.phase_id === phase.id);
+      const done = phaseTasks.filter((t) => t.done).length;
+      lines.push(
+        `- เฟส ${phase.sort_order} ${phase.name}: ${statusText[phase.status as string] ?? phase.status} (งาน ${done}/${phaseTasks.length}, ~${phase.duration_weeks ?? "?"} สัปดาห์)`
+      );
+    }
+    const { overdue, dueSoon } = splitDueTasks(projectTasks);
+    for (const task of overdue.slice(0, 5)) {
+      lines.push(`- [เลยกำหนด] ${task.title} (กำหนด ${task.due_date})`);
+    }
+    for (const task of dueSoon.slice(0, 5)) {
+      lines.push(`- [ใกล้ถึงกำหนด] ${task.title} (กำหนด ${task.due_date})`);
+    }
+  }
+
+  // --- บันทึกประจำวันล่าสุด ---
+  const journal = journalRes.data ?? [];
+  if (journal.length > 0) {
+    lines.push("");
+    lines.push(`## บันทึกประจำวันล่าสุด (${journal.length} รายการ)`);
+    for (const entry of journal) {
+      const content = String(entry.content).replace(/\s+/g, " ");
+      lines.push(
+        `- ${entry.entry_date}: ${content.length > 160 ? `${content.slice(0, 160)}…` : content}`
+      );
+    }
+  }
+
+  // --- แผนปลูก ---
+  const plantings = plantingsRes.data ?? [];
+  if (plantings.length > 0) {
+    lines.push("");
+    lines.push(`## แผนปลูกที่ยังไม่จบ (${plantings.length} รายการ)`);
+    for (const planting of plantings) {
+      const cropRaw = planting.crops as { name: string } | { name: string }[] | null;
+      const cropName = Array.isArray(cropRaw) ? cropRaw[0]?.name : cropRaw?.name;
+      const parts = [
+        `- ${cropName ?? "พืช"}${planting.quantity ? ` ${planting.quantity}` : ""}`,
+        planting.status === "planted"
+          ? `ปลูกแล้ว ${planting.planted_date ?? ""}`
+          : `วางแผนปลูก ${planting.planned_date ?? "ยังไม่กำหนดวัน"}`,
+      ];
+      if (planting.zone) parts.push(`ที่ ${planting.zone}`);
+      if (planting.expected_harvest_date)
+        parts.push(`คาดเก็บเกี่ยว ${planting.expected_harvest_date}`);
+      lines.push(parts.join(" | "));
+    }
+  }
+
+  // --- ผังแปลง (คำนวณสัดส่วนจาก elements ด้วยสูตรเดียวกับหน้าเว็บ) ---
+  const layouts = layoutsRes.data ?? [];
+  if (layouts.length > 0) {
+    lines.push("");
+    lines.push(`## ผังแปลงที่ออกแบบไว้ (เป้าสัดส่วน น้ำ30:นา30:ป่าสวน30:อยู่อาศัย10)`);
+    for (const layout of layouts) {
+      const stats = computeStats(
+        Number(layout.width_m),
+        Number(layout.height_m),
+        (layout.elements ?? []) as LayoutElement[]
+      );
+      const percents = stats.groups
+        .map((g) => `${Math.round(g.percent)}%`)
+        .join(":");
+      const earthDiff = stats.pondVolume - stats.khokFillVolume;
+      lines.push(
+        `- ${layout.name}: ${sqmToRai(stats.plotArea).toFixed(1)} ไร่ | สัดส่วนจริง ${percents} | ดินขุดจากสระ ${Math.round(stats.pondVolume).toLocaleString("th-TH")} ลบ.ม. ถมโคกต้องใช้ ${Math.round(stats.khokFillVolume).toLocaleString("th-TH")} ลบ.ม. (${earthDiff >= 0 ? "ดินพอ" : "ดินขาด"})`
+      );
+    }
+  }
+
   return lines.join("\n");
 }
 
-function systemPrompt(context: string): string {
+/** คำสั่งเสริมต่อ task วิเคราะห์ — ต่อท้าย system prompt */
+const TASK_INSTRUCTIONS: Record<string, string> = {
+  weekly_summary: `งานที่ได้รับ: สรุปความก้าวหน้าช่วงที่ผ่านมา
+ใช้บันทึกประจำวันล่าสุด + สถานะงานโครงการ ตอบ 3 ส่วนสั้นๆ: (1) ทำอะไรไปแล้ว (2) อะไรค้าง/เลยกำหนด (3) สัปดาห์หน้าควรโฟกัสอะไร`,
+  budget_check: `งานที่ได้รับ: ตรวจสอบงบบานปลาย
+เทียบรายจ่ายจริงกับแผนรายหมวดและวงเงินรวม ชี้หมวดที่ใช้เกินแผนหรือใช้เร็วผิดปกติเป็นตัวเลขชัดๆ พร้อมข้อเสนอปรับ 1-2 ข้อ ถ้ายังไม่มีความเสี่ยงให้บอกตรงๆ`,
+  next_tasks: `งานที่ได้รับ: แนะนำลำดับงานถัดไป
+ดูจากเฟสปัจจุบัน งานค้าง กำหนดเสร็จ แผนปลูก และฤดูกาลของไทย เสนองานที่ควรทำ 3-5 อย่างเรียงตามลำดับความสำคัญ พร้อมเหตุผลสั้นๆ ต่อข้อ`,
+};
+
+function systemPrompt(context: string, task: string): string {
+  const taskInstruction = TASK_INSTRUCTIONS[task]
+    ? `\n\n${TASK_INSTRUCTIONS[task]}`
+    : "";
   return `คุณคือ "ผู้ช่วยเกษียณสุข" ที่ปรึกษาส่วนตัวของคู่สามีภรรยาวัยเกษียณ (60+)
 ที่กำลังวางแผนซื้อที่ดิน 5 ไร่ งบจำกัด เพื่อทำเกษตรทฤษฎีใหม่ / โคก หนอง นา และอยู่อาศัยเองอย่างพอเพียง
 
@@ -158,7 +313,7 @@ function systemPrompt(context: string): string {
 5. ถ้าข้อมูลในระบบไม่พอตอบ ให้บอกตรงๆ และแนะนำว่าควรไปเก็บข้อมูลอะไรเพิ่ม
 
 # ข้อมูลปัจจุบันในระบบ (อัปเดตล่าสุด ณ ตอนนี้)
-${context}`;
+${context}${taskInstruction}`;
 }
 
 type ContentPart =
@@ -238,7 +393,8 @@ export async function POST(req: NextRequest) {
     content: message || "(ส่งรูปภาพ)",
   });
 
-  const task = body.task === "compare" ? "compare" : "chat";
+  const task =
+    body.task && ALLOWED_TASKS.has(body.task) ? body.task : "chat";
   const model = pickModel({
     modelOverride: body.modelOverride ?? null,
     hasImages: images.length > 0,
@@ -274,7 +430,7 @@ export async function POST(req: NextRequest) {
         // ให้ OpenRouter แนบ token/cost จริงมาใน chunk สุดท้าย
         usage: { include: true },
         messages: [
-          { role: "system", content: systemPrompt(context) },
+          { role: "system", content: systemPrompt(context, task) },
           ...history,
           { role: "user", content: userContent },
         ],

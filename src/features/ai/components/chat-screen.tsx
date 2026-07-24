@@ -29,7 +29,12 @@ import { formatDateThai } from "@/lib/format";
 import { compressImage } from "@/lib/image";
 import { deleteConversation, fetchConversations, fetchMessages } from "../queries";
 import { fileToDataUrl, streamChat } from "../use-chat-stream";
-import { AUTO_MODEL, type ChatTask, type Conversation } from "../types";
+import {
+  AUTO_MODEL,
+  QUICK_TASKS,
+  type ChatTask,
+  type Conversation,
+} from "../types";
 
 type BubbleMessage = {
   id: string;
@@ -152,13 +157,22 @@ export function ChatScreen() {
     if (!raw) return;
     sessionStorage.removeItem(AI_PREFILL_KEY);
 
+    const validTasks = new Set<ChatTask>([
+      "chat",
+      "compare",
+      "weekly_summary",
+      "budget_check",
+      "next_tasks",
+    ]);
     let message = raw;
     let task: ChatTask = "chat";
     try {
       const parsed = JSON.parse(raw) as { message?: string; task?: string };
       if (parsed.message) {
         message = parsed.message;
-        task = parsed.task === "compare" ? "compare" : "chat";
+        task = validTasks.has(parsed.task as ChatTask)
+          ? (parsed.task as ChatTask)
+          : "chat";
       }
     } catch {
       // ค่าเก่าเป็นข้อความล้วน — ใช้ตรงๆ
@@ -273,6 +287,21 @@ export function ChatScreen() {
                   onClick={() => void send(suggestion, [], "chat")}
                 >
                   {suggestion}
+                </Button>
+              ))}
+            </div>
+            <p className="pt-2 text-sm text-muted-foreground">
+              รายงานอัตโนมัติ (วิเคราะห์ละเอียด):
+            </p>
+            <div className="space-y-2">
+              {QUICK_TASKS.map(({ task, label, message }) => (
+                <Button
+                  key={task}
+                  variant="secondary"
+                  className="h-auto w-full whitespace-normal py-3 text-left"
+                  onClick={() => void send(message, [], task)}
+                >
+                  {label}
                 </Button>
               ))}
             </div>

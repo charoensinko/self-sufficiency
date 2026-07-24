@@ -1,51 +1,55 @@
-# Handoff: เกษียณสุข (Kasian Suk) — Dev Phase 1 เสร็จสมบูรณ์
+# Handoff: เกษียณสุข (Kasian Suk) — Dev Phase 1 + 2 เสร็จสมบูรณ์
 
 > สำหรับ session ใหม่ของโปรเจกต์ `C:\Users\Consonant\Desktop\self-sufficiency`
-> อ่านคู่กับ `CLAUDE.md` (กติกาทั้งหมด), `docs/decisions.md` (การตัดสินใจ 6 เรื่อง),
-> `README.md` (setup + deploy + production checklist) — เนื้อหาในนั้นไม่ทวนซ้ำที่นี่
+> อ่านคู่กับ `CLAUDE.md` (กติกาทั้งหมด), `docs/decisions.md` (การตัดสินใจ 7 เรื่อง),
+> `docs/plan-dev-phase2.md` (แผน+backlog Phase 2), `docs/master-plan-10-phases.md` (แผนแม่บท),
+> `README.md` (setup + deploy) — เนื้อหาในนั้นไม่ทวนซ้ำที่นี่
 
-## สถานะ: Dev Phase 1 (MVP) จบครบ 7 Step แล้ว และ deploy ใช้งานจริง
+## สถานะ: Dev Phase 1 (MVP) + Dev Phase 2 "Project OS" จบครบแล้ว deploy ใช้งานจริง
 
-- **Production**: https://self-sufficiency.vercel.app (Vercel project: `charoensinkos-projects/self-sufficiency`)
-- **GitHub**: https://github.com/charoensinko/self-sufficiency (branch `main`) — **เชื่อม auto-deploy แล้ว: `git push` = deploy production อัตโนมัติ** ไม่ต้องรัน `vercel --prod`
-- **Supabase**: โปรเจกต์ `self-sufficiency` id `cbrpqjekfzzmsrhgajvs` (ap-northeast-1) — migrations 3 ไฟล์ + seed apply แล้ว, ผู้ใช้ 2 คนสร้างแล้ว, login ทดสอบผ่าน
-- **UI เป็น responsive สองโหมดแล้ว**: จอเล็ก = Bottom Nav เดิม, จอ ≥1024px = Sidebar ซ้าย (เมนูรวมศูนย์ `src/components/nav-items.ts`, shell ที่ `src/components/app-shell.tsx`) — **desktop layout เสร็จครบทุกหน้าแล้ว**: แดชบอร์ด 2×2, รายการแปลง grid, รายละเอียดแปลง (ข้อมูล|แผนที่ คู่กัน + คะแนน/เช็คลิสต์ 2 คอลัมน์), ฟอร์มแปลง 2 คอลัมน์, งบประมาณ 2 คอลัมน์ทั้ง 3 แท็บ
+- **Production**: https://self-sufficiency.vercel.app (Vercel: `charoensinkos-projects/self-sufficiency`)
+- **GitHub**: https://github.com/charoensinko/self-sufficiency (branch `main`) — **`git push` = auto-deploy production**
+- **Supabase**: โปรเจกต์ `self-sufficiency` id `cbrpqjekfzzmsrhgajvs` (ap-northeast-1) — migrations 4 ไฟล์ + seed apply แล้ว (รวม Phase 2: 10 เฟส/74 งาน/21 พืช)
+- **สถานะชีวิตจริงของผู้ใช้: ยังไม่ได้ซื้อที่ดิน** — Phase 2 สร้างเตรียมไว้ล่วงหน้า ทุกโมดูลใช้ได้โดยไม่ผูกแปลงจริง
 - ทุก commit ผ่าน build+lint ก่อนเสมอ — ดู `git log --oneline`
-- ผู้ใช้ทดสอบผ่านแล้วทุกโมดูล รวมถึงติดตั้ง PWA บนมือถือ
 
-## สิ่งที่มีอยู่ (สรุประดับ module — โครงสร้างไฟล์ดู CLAUDE.md)
+## โมดูลที่มี (Phase 1 + Phase 2)
 
-1. **Auth**: หน้า `/login` ไทย, middleware กันทุกหน้า, trigger ผูก user ใหม่เข้า household แรกอัตโนมัติ
-2. **Budget** (`/budget`): 3 แท็บ ภาพรวม donut / บันทึกรายจ่าย+ใบเสร็จ / แผนงบ — **วงเงินรวมปรับได้** (`households.total_budget`, ไม่ fix 5 ล้าน)
-3. **Land Finder** (`/land`, `/land/new`, `/land/[id]` 3 แท็บ, `/land/compare`): scoring 8 เกณฑ์+radar, checklist 25 ข้อ, parse ลิงก์ Google Maps, รูปหลายประเภท
-4. **AI Copilot** (`/ai`, `/settings`, `/api/ai/chat`): streaming NDJSON, task router (haiku/sonnet/gemini), context injection จาก DB ทุก call, usage log ต้นทุนจริงจาก OpenRouter, ปุ่มส่งวิเคราะห์จากหน้า compare ผ่าน sessionStorage (`AI_PREFILL_KEY` ใน `src/lib/constants.ts`, รูปแบบ JSON `{message, task}`)
-5. **Dashboard** (`/`): 4 การ์ด (แปลง+Top3 / งบ mini donut / งานค้าง checklist / ถาม AI ลัด)
-6. **PWA**: manifest + ไอคอนต้นกล้า (regenerate: `node scripts/make-icons.mjs`) + offline fallback `/~offline`
+1. **Auth**: `/login` ไทย, middleware กันทุกหน้า, trigger ผูก user ใหม่เข้า household แรก
+2. **Budget** (`/budget`): 3 แท็บ, วงเงินรวมปรับได้ (`households.total_budget`)
+3. **Land Finder** (`/land`, `/land/[id]`, `/land/compare`): scoring 8 เกณฑ์+radar, checklist 25 ข้อ
+4. **Project Tracker** (`/project`, `/project/[id]`): timeline 10 เฟส (desktop 2 คอลัมน์), งาน+milestone (`is_milestone`), ติ๊กเสร็จ, กำหนดเสร็จ, ปุ่มเปลี่ยนสถานะเฟสบันทึกวันเริ่ม/จบจริง
+5. **Journal** (`/journal`): บันทึกรายวันจัดกลุ่มรายเดือน + รูปหลายรูป (bucket `journal-photos`)
+6. **Crop Planner** (`/crops`): 3 แท็บ — ปฏิทินเดือน (รวมปลูก/เก็บเกี่ยว/งานโครงการ + พืชเหมาะปลูกเดือนนี้), แผนปลูก (คำนวณวันคาดเก็บเกี่ยวอัตโนมัติ), ฐานข้อมูลพืช
+7. **Farm Layout** (`/layout`): SVG canvas หน่วยเมตรจริง ลากโซน 6 ชนิด, สัดส่วนเทียบ 30:30:30:10 สด, สมดุลดินขุดสระ-ถมโคก, หลายผัง+ผูก land candidate ได้ — **มี backlog สำคัญใน plan-dev-phase2.md** (พื้นหลังรูป+สเกล, polygon)
+8. **AI Copilot** (`/ai`, `/api/ai/chat`): streaming NDJSON, context injection ครบทุกโมดูล (แปลง/งบ/โครงการ/บันทึก/แผนปลูก/ผังแปลง), task router — task ใหม่ Phase 2: `weekly_summary` / `budget_check` / `next_tasks` (ใช้ Sonnet, มีปุ่มลัดในหน้าแชท), `AI_PREFILL_KEY` sessionStorage รูปแบบ `{message, task}`
+9. **Dashboard** (`/`): การ์ด แปลง / งบ / โครงการ (เฟสปัจจุบัน+งานใกล้กำหนด) / งานตรวจแปลง / ถาม AI
+10. **Nav**: มือถือ 5 แท็บ (แท็บ 5 = "เพิ่มเติม" → `/more`), desktop Sidebar โชว์ทุกเมนู — คุมที่เดียว `src/components/nav-items.ts` (`NAV_ITEMS` + `EXTRA_NAV_ITEMS`)
 
 ## Gotchas ของ environment นี้ (สำคัญกับ session ใหม่)
 
-- **อินเทอร์เน็ตผู้ใช้หลุดบ่อย** — คำสั่ง npm/npx ที่ใช้เน็ตมัก stall เงียบๆ ถ้าค้าง: หยุด task แล้ว**ส่งคำสั่งให้ผู้ใช้รันเอง** (พิมพ์ `! <cmd>` ในแชท) เป็นวิธีที่ workflow นี้ใช้มาตลอด
-- **ห้ามใส่ค่า secret ลง command ตรงๆ** — classifier บล็อก ให้อ่านจาก `.env.local` แล้ว pipe (ดูตัวอย่างฟังก์ชัน `Add-VercelEnv` ที่เคยใช้)
-- `npm run build` ห้ามใช้ `--turbopack` (service worker จะไม่ถูก generate) — dev ใช้ turbopack ได้
-- ทดสอบจากมือถือในบ้าน: `http://192.168.1.66:3000` (IP อาจเปลี่ยน) — เปิด firewall TCP 3000 profile Private ไว้แล้ว
-- shadcn CLI เป็น v5 แล้ว (`-b radix -p nova`) และปุ่มถูกขยายเป็น 48px เอง — ถ้า re-add `button.tsx` ต้องปรับซ้ำ (ดู decisions.md)
-- Secrets ทั้งหมดอยู่ `.env.local` (ไม่ commit) และตั้งใน Vercel production แล้ว — `SUPABASE_SERVICE_ROLE_KEY` ยังว่าง (ยังไม่มีอะไรใช้)
-- MCP ที่เชื่อมไว้: Supabase (apply_migration/execute_sql ใช้ได้) และ Vercel (deploy ผ่าน CLI เท่านั้น ตัว MCP tool ใช้ไม่ได้จริง)
+- **อินเทอร์เน็ตผู้ใช้หลุดบ่อย** — คำสั่ง npm/npx ที่ใช้เน็ตมัก stall เงียบๆ ถ้าค้าง: หยุดแล้ว**ส่งคำสั่งให้ผู้ใช้รันเอง** (พิมพ์ `! <cmd>` ในแชท)
+- **ห้ามใส่ค่า secret ลง command ตรงๆ** — classifier บล็อก ให้อ่านจาก `.env.local` แล้ว pipe
+- `npm run build` ห้ามใช้ `--turbopack` (service worker ไม่ generate) — dev ใช้ได้
+- ทดสอบมือถือในบ้าน: `http://192.168.1.66:3000` (IP อาจเปลี่ยน) — firewall TCP 3000 เปิดแล้ว
+- shadcn CLI v5 (`-b radix -p nova`), ปุ่มขยาย 48px เอง — re-add `button.tsx` ต้องปรับซ้ำ
+- Secrets อยู่ `.env.local` + Vercel production แล้ว — `SUPABASE_SERVICE_ROLE_KEY` ยังว่าง
+- MCP: Supabase ใช้ได้จริง (apply_migration/execute_sql), Vercel ใช้ผ่าน git push แทน
+- โฟลเดอร์ route `/layout` อยู่ร่วมกับ `app/layout.tsx` ได้ (ตรวจแล้ว — ดู decisions.md)
+- ตาราง Phase 2 ทั้งหมด RLS แบบ `household_id = current_household_id()` เหมือนเดิม
 
 ## งานถัดไป (ยังไม่เริ่ม — รอผู้ใช้สั่ง)
 
-- **Dev Phase 2 "Project OS"** (บริหารการก่อสร้างหลังซื้อที่ดิน) — สเปกภาพรวมใน `docs/webapp-concept.md` ; **ห้ามเริ่มเองจนกว่าผู้ใช้ยืนยัน scope**
-- **การตัดสินใจที่ค้างไว้ (คุยแล้ว ยังไม่ทำ)**: เมนูใหม่ใน Phase 2 จะใช้แนว "เพิ่มแท็บที่ 5 ชื่อ เพิ่มเติม + สลับแท็บหลักตามช่วงชีวิต" — เพิ่มที่ `src/components/nav-items.ts` ที่เดียวขึ้นทั้งสองโหมด
-- ค้างเล็กๆ: คอลัมน์ `ai_messages.image_paths` ยังไม่ใช้ (ตั้งใจ — ดู decisions.md)
-
-## Suggested skills
-
-- `verify` / `run` — ก่อน commit ฟีเจอร์ใหม่ที่มีผลจริงบนหน้าจอ
-- `dataviz` — ทุกครั้งที่จะเพิ่มกราฟใหม่ (Recharts)
-- `code-review` — รีวิว diff ก่อน commit ใหญ่
-- `vercel:deploy` / `vercel:env` — งาน deploy รอบถัดไป
-- `claude-api` — ถ้าจะแตะ model IDs/ราคาในโมดูล AI
+- **Backlog ผังแปลง 2 จังหวะ** (ดูรายละเอียดใน `docs/plan-dev-phase2.md`):
+  จังหวะ 1 พื้นหลังรูป+ตั้งสเกล+เนื้อที่โฉนดเป็นตัวหาร % (ทำได้เลย),
+  จังหวะ 2 โซน polygon แตะทีละจุด (รอได้ที่ดินจริง)
+- **แจ้งเตือน LINE OA** — ตัดออกจาก Phase 2 โดยตั้งใจ (ในแอปมีแล้ว) รอผู้ใช้สั่ง
+- ลิงก์ "ผังของแปลงนี้" ในหน้า `/land/[id]` — เสนอไว้แล้ว ผู้ใช้ยังไม่ยืนยัน
+- **Dev Phase 3 (Smart Farm/IoT)** — ห้ามเริ่มจนกว่าจะมีที่ดินจริงและผู้ใช้สั่ง
+- ค้างเล็กๆ: `ai_messages.image_paths` ยังไม่ใช้ (ตั้งใจ — ดู decisions.md)
 
 ## Workflow ที่ผู้ใช้คุ้นแล้ว
 
-ทำทีละ Step → สรุปสั้นเป็นภาษาไทย → รอยืนยันก่อน Step ถัดไป → build+lint ผ่านแล้ว commit (`feat(scope): ...` อังกฤษ) ผู้ใช้สื่อสารภาษาไทยทั้งหมด
+ทำทีละ Step → สรุปสั้นเป็นภาษาไทย → รอยืนยันก่อน Step ถัดไป → build+lint ผ่านแล้ว
+commit (`feat(scope): ...` อังกฤษ) → push (auto-deploy) ผู้ใช้สื่อสารภาษาไทยทั้งหมด
+มีการตัดสินใจสถาปัตยกรรมใหม่ → เพิ่มใน `docs/decisions.md`

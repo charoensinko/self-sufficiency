@@ -16,7 +16,32 @@ export type ChatMessage = {
   created_at: string;
 };
 
-export type ChatTask = "chat" | "compare";
+export type ChatTask =
+  | "chat"
+  | "compare"
+  | "weekly_summary"
+  | "budget_check"
+  | "next_tasks";
+
+/** ปุ่มลัดงานวิเคราะห์ (Dev Phase 2) — server เลือก Sonnet ให้อัตโนมัติ */
+export const QUICK_TASKS: { task: ChatTask; label: string; message: string }[] =
+  [
+    {
+      task: "weekly_summary",
+      label: "📋 สรุปความก้าวหน้าช่วงนี้",
+      message: "ช่วยสรุปความก้าวหน้าช่วงที่ผ่านมาให้หน่อย",
+    },
+    {
+      task: "budget_check",
+      label: "💰 ตรวจงบ เสี่ยงบานปลายไหม",
+      message: "ช่วยตรวจงบประมาณให้หน่อย มีหมวดไหนเสี่ยงบานปลายไหม",
+    },
+    {
+      task: "next_tasks",
+      label: "🔨 งานถัดไปควรทำอะไร",
+      message: "งานถัดไปที่ควรทำคืออะไร ช่วยเรียงลำดับให้หน่อย",
+    },
+  ];
 
 /** model อัตโนมัติตาม Task Router ฝั่ง server */
 export const AUTO_MODEL = "auto";
