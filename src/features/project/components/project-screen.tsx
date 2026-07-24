@@ -67,17 +67,26 @@ export function ProjectScreen() {
         </CardContent>
       </Card>
 
-      {/* Timeline 10 เฟส */}
-      <ol className="relative space-y-3">
-        {phasesWithProgress.map((phase, index) => {
-          const isLast = index === phasesWithProgress.length - 1;
+      {/* Timeline 10 เฟส — desktop แบ่งครึ่งเป็น 2 คอลัมน์ให้เห็นครบจอเดียว */}
+      <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
+        {[
+          phasesWithProgress.slice(0, Math.ceil(phasesWithProgress.length / 2)),
+          phasesWithProgress.slice(Math.ceil(phasesWithProgress.length / 2)),
+        ].map((column, colIndex, columns) => (
+        <ol key={colIndex} className="relative space-y-3">
+        {column.map((phase, index) => {
+          const lastInColumn = index === column.length - 1;
+          const isLast = colIndex === columns.length - 1 && lastInColumn;
           return (
             <li key={phase.id} className="relative flex gap-3">
-              {/* เส้นเชื่อม timeline */}
+              {/* เส้นเชื่อม timeline — ท้ายคอลัมน์ซ่อนบน desktop แต่มือถือยังเชื่อมข้ามช่วง */}
               {!isLast && (
                 <span
                   aria-hidden
-                  className="absolute left-5 top-12 -bottom-3 w-0.5 bg-border"
+                  className={cn(
+                    "absolute left-5 top-12 -bottom-3 w-0.5 bg-border",
+                    lastInColumn && "lg:hidden"
+                  )}
                 />
               )}
               <span
@@ -148,7 +157,9 @@ export function ProjectScreen() {
             </li>
           );
         })}
-      </ol>
+        </ol>
+        ))}
+      </div>
     </div>
   );
 }
