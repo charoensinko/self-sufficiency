@@ -3,6 +3,7 @@ import {
   Home,
   MapPin,
   Menu,
+  NotebookPen,
   Settings,
   Sparkles,
   Wallet,
@@ -25,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
  */
 export const EXTRA_NAV_ITEMS: NavItem[] = [
   { href: "/project", label: "โครงการ", icon: Hammer },
+  { href: "/journal", label: "บันทึกประจำวัน", icon: NotebookPen },
 ];
 
 export const MORE_NAV_ITEM: NavItem = {
