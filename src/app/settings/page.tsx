@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 py-6 lg:max-w-3xl lg:px-8">
       <SettingsScreen />
     </main>
   );

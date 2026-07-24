@@ -12,7 +12,7 @@ export default async function EditLandPage({
 }) {
   const { id } = await params;
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 py-6 lg:max-w-3xl lg:px-8">
       <LandEditScreen landId={id} />
     </main>
   );

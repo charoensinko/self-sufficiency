@@ -143,7 +143,7 @@ export function LandListScreen() {
             : "ไม่มีแปลงที่ตรงกับตัวกรอง"}
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-2">
           {visibleLands.map((land) => (
             <LandCard key={land.id} land={land} />
           ))}

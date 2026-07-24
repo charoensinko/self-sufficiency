@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function NewLandPage() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 py-6 lg:max-w-3xl lg:px-8">
       <div className="mb-4 flex items-center gap-2">
         <Button asChild variant="ghost" size="icon-sm" aria-label="กลับ">
           <Link href="/land">

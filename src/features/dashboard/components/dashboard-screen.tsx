@@ -144,7 +144,7 @@ export function DashboardScreen() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
       {/* การ์ด 1: แปลงที่ดิน */}
       <Card>
         <CardHeader className="pb-3">

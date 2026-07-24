@@ -61,7 +61,7 @@ npx supabase db push # apply migrations (ถ้าใช้ supabase CLI)
 
 ### UX (ผู้ใช้สูงวัย — สำคัญมาก)
 - UI ภาษาไทยทั้งหมด ฟอนต์ Noto Sans Thai ฐาน ≥16px ปุ่ม min-height 48px contrast สูง
-- Mobile-first, Bottom Navigation 4 แท็บ: หน้าหลัก / ที่ดิน / งบประมาณ / AI ที่ปรึกษา
+- Responsive สองโหมด: จอเล็ก = Bottom Navigation 4 แท็บ (หน้าหลัก / ที่ดิน / งบประมาณ / AI ที่ปรึกษา), จอ ≥1024px = Sidebar ซ้าย — เมนูชุดเดียวกันรวมศูนย์ที่ `src/components/nav-items.ts`
 - ฟอร์มสั้น field น้อยต่อจอ error message ภาษาไทยอ่านเข้าใจง่าย
 - ห้ามใช้ศัพท์เทคนิคใน UI (เช่น ใช้ "บันทึก" ไม่ใช่ "Submit", "แปลงที่ดิน" ไม่ใช่ "Land Candidate")
 

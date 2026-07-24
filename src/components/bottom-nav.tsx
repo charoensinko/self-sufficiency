@@ -2,27 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, MapPin, Wallet, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NAV_ITEMS, isNavActive } from "./nav-items";
 
-const tabs = [
-  { href: "/", label: "หน้าหลัก", icon: Home },
-  { href: "/land", label: "ที่ดิน", icon: MapPin },
-  { href: "/budget", label: "งบประมาณ", icon: Wallet },
-  { href: "/ai", label: "AI ที่ปรึกษา", icon: Sparkles },
-];
-
+/** เมนูล่างสำหรับจอเล็ก — จอ ≥1024px ใช้ Sidebar แทน */
 export function BottomNav() {
   const pathname = usePathname();
 
   if (pathname === "/login") return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-4">
-        {tabs.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = isNavActive(href, pathname);
           return (
             <Link
               key={href}

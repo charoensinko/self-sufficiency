@@ -12,7 +12,7 @@ export default async function LandDetailPage({
 }) {
   const { id } = await params;
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 py-6 lg:max-w-3xl lg:px-8">
       <LandDetailScreen landId={id} />
     </main>
   );

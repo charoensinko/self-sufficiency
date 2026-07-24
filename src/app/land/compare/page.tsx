@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function ComparePage() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-6">
+    <main className="mx-auto max-w-lg px-4 py-6 lg:max-w-5xl lg:px-8">
       <CompareScreen />
     </main>
   );

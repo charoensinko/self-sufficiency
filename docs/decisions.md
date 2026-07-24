@@ -25,6 +25,16 @@ shadcn CLI เวอร์ชันปัจจุบันเลิกใช้
 สร้าง profile + ผูกเข้า household แรกให้อัตโนมัติ — ตัดขั้นตอน insert profile ด้วยมือใน README
 ถ้าอนาคตรองรับหลาย household ต้องเปลี่ยนเป็นระบบ invite แล้วลบ trigger นี้
 
+## 2026-07-07 — Responsive สองโหมด: มือถือ Bottom Nav เดิม + Desktop Sidebar ซ้าย
+
+เดิมออกแบบ mobile-first อย่างเดียว — ผู้ใช้ต้องการใช้บนคอมพิวเตอร์แบบเต็มจอด้วย
+จึงเพิ่มโหมด desktop (breakpoint `lg` ≥1024px) โดยไม่แตะโหมดมือถือ:
+- เมนูรวมศูนย์ที่ `src/components/nav-items.ts` — BottomNav (จอเล็ก) และ Sidebar (จอใหญ่) ใช้ชุดเดียวกัน
+- `AppShell` เว้นระยะให้เมนูตามโหมด (pb ล่างบนมือถือ / pl ซ้ายบน desktop) ยกเว้นหน้า login
+- Sidebar มีลิงก์ตั้งค่า + ปุ่มออกจากระบบในตัว (ปุ่ม logout บนแดชบอร์ดซ่อนบน desktop)
+- เนื้อหาขยายจาก `max-w-lg` เป็น 3xl-5xl ตามหน้า, แดชบอร์ดเป็น grid 2 คอลัมน์,
+  รายการแปลงเป็น grid 2 ใบต่อแถว — ยังไม่ปรับ layout ภายในหน้าอื่น (ค่อยเก็บตามการใช้จริง)
+
 ## 2026-07-07 — AI Copilot: รูปแนบไม่ persist, model override เก็บใน localStorage
 
 - รูปที่แนบในแชทถูกส่งเป็น base64 ให้ model ตรงๆ **ไม่บันทึกลง Storage** — คอลัมน์

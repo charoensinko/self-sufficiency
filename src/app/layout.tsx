@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AppShell } from "@/components/app-shell";
 import { BottomNav } from "@/components/bottom-nav";
+import { Sidebar } from "@/components/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -43,9 +45,10 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body
-        className={`${notoSansThai.variable} ${geistMono.variable} pb-20 antialiased`}
+        className={`${notoSansThai.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Sidebar />
+        <AppShell>{children}</AppShell>
         <BottomNav />
         <Toaster position="top-center" richColors />
       </body>
