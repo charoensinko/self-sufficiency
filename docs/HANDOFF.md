@@ -3,7 +3,8 @@
 > สำหรับ session ใหม่ของโปรเจกต์ `C:\Users\Consonant\Desktop\self-sufficiency`
 > อ่านคู่กับ `CLAUDE.md` (กติกาทั้งหมด), `docs/decisions.md` (การตัดสินใจ 7 เรื่อง),
 > `docs/plan-dev-phase2.md` (แผน+backlog Phase 2), `docs/master-plan-10-phases.md` (แผนแม่บท),
-> `README.md` (setup + deploy) — เนื้อหาในนั้นไม่ทวนซ้ำที่นี่
+> `docs/backup-restore.md` (สำรอง/กู้ข้อมูล), `README.md` (setup + deploy)
+> — เนื้อหาในนั้นไม่ทวนซ้ำที่นี่
 
 ## สถานะ: Dev Phase 1 (MVP) + Dev Phase 2 "Project OS" จบครบแล้ว deploy ใช้งานจริง
 
@@ -38,7 +39,8 @@
 - **สำรองข้อมูล**: ดับเบิลคลิก `backup.bat` / `restore.bat` (หรือ `npm run backup` /
   `npm run restore -- backups/<โฟลเดอร์>`) — manual ตามที่ผู้ใช้เลือก ยังไม่ตั้งเวลาอัตโนมัติ
   ขั้นตอนเต็ม+ลำดับกู้ระบบดู `docs/backup-restore.md`, โฟลเดอร์ `backups/` อยู่นอก git
-  **ทดสอบจริงผ่านแล้ว 2026-07-24** (18 ตาราง + รูปครบ 4 buckets)
+  **ผู้ใช้รันจริงผ่านแล้ว** — backup ชุดแรกอยู่ที่ `backups/2026-07-24_1755/`
+  (18 ตาราง + รูปครบ 4 buckets, แนะนำผู้ใช้ก๊อปไปเก็บนอกเครื่องแล้ว)
   หมายเหตุ encoding: ไฟล์ `.bat` ต้องเป็น ASCII เท่านั้น — ข้อความไทยอยู่ฝั่งสคริปต์ Node
 - MCP: Supabase ใช้ได้จริง (apply_migration/execute_sql), Vercel ใช้ผ่าน git push แทน
 - โฟลเดอร์ route `/layout` อยู่ร่วมกับ `app/layout.tsx` ได้ (ตรวจแล้ว — ดู decisions.md)
@@ -54,6 +56,8 @@
   จังหวะที่เหมาะ = แผนแม่บทเดินถึงเฟส 4–5 (ระบบน้ำ/ไฟติดตั้ง) เป็นงานเพิ่มเข้าล้วน
   ไม่ต้องแก้ของเดิม (สถาปัตยกรรมดู webapp-concept.md §4) — **ก่อนเริ่มให้เช็ค
   อินเทอร์เน็ตในแปลงจริงก่อน** ถ้าสัญญาณแย่ต้องเผื่องบเสาสัญญาณ/Starlink ในแผนงบ
+- **ตั้งเวลา backup อัตโนมัติ** (เช่น Windows Task Scheduler รายเดือน) — ผู้ใช้ขอใช้แบบ
+  manual ไปก่อนจนเห็นความถี่ธรรมชาติของตัวเอง แล้วค่อยสั่ง
 - ค้างเล็กๆ: `ai_messages.image_paths` ยังไม่ใช้ (ตั้งใจ — ดู decisions.md)
 
 ## Workflow ที่ผู้ใช้คุ้นแล้ว
