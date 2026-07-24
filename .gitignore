@@ -44,6 +44,9 @@ yarn-error.log*
 /public/fallback-*.js
 /public/fallback-*.js.map
 
+# ข้อมูลสำรองส่วนตัวจาก npm run backup — ห้าม commit
+/backups
+
 # vercel
 .vercel
 

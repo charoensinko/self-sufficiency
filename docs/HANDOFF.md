@@ -33,7 +33,10 @@
 - `npm run build` ห้ามใช้ `--turbopack` (service worker ไม่ generate) — dev ใช้ได้
 - ทดสอบมือถือในบ้าน: `http://192.168.1.66:3000` (IP อาจเปลี่ยน) — firewall TCP 3000 เปิดแล้ว
 - shadcn CLI v5 (`-b radix -p nova`), ปุ่มขยาย 48px เอง — re-add `button.tsx` ต้องปรับซ้ำ
-- Secrets อยู่ `.env.local` + Vercel production แล้ว — `SUPABASE_SERVICE_ROLE_KEY` ยังว่าง
+- Secrets อยู่ `.env.local` + Vercel production แล้ว — `SUPABASE_SERVICE_ROLE_KEY`
+  ยังว่าง (**สคริปต์ backup/restore ต้องใช้** — ผู้ใช้ต้องคัดลอกจาก Dashboard มากรอกเอง)
+- **สำรองข้อมูล**: `npm run backup` / `npm run restore -- backups/<โฟลเดอร์>` (manual)
+  — ขั้นตอนเต็ม+ลำดับกู้ระบบดู `docs/backup-restore.md`, โฟลเดอร์ `backups/` อยู่นอก git
 - MCP: Supabase ใช้ได้จริง (apply_migration/execute_sql), Vercel ใช้ผ่าน git push แทน
 - โฟลเดอร์ route `/layout` อยู่ร่วมกับ `app/layout.tsx` ได้ (ตรวจแล้ว — ดู decisions.md)
 - ตาราง Phase 2 ทั้งหมด RLS แบบ `household_id = current_household_id()` เหมือนเดิม
