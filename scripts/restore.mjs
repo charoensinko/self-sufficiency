@@ -10,6 +10,7 @@
 //   5. อัปเดต env ใน Vercel แล้ว redeploy
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import readline from "node:readline/promises";
 import {
   BUCKETS,
   createAdminClient,
@@ -19,10 +20,48 @@ import {
   TABLES,
 } from "./supabase-admin.mjs";
 
-const backupArg = process.argv[2];
+let backupArg = process.argv[2];
+
+// ไม่ระบุโฟลเดอร์ (เช่น รันจาก restore.bat) → โหมดถาม-ตอบ
 if (!backupArg) {
-  console.error("ระบุโฟลเดอร์ backup ด้วย เช่น: npm run restore -- backups/2026-07-24_1530");
-  process.exit(1);
+  const backupsRoot = path.join(ROOT, "backups");
+  const folders = existsSync(backupsRoot)
+    ? readdirSync(backupsRoot).filter((name) =>
+        statSync(path.join(backupsRoot, name)).isDirectory()
+      )
+    : [];
+  if (folders.length === 0) {
+    console.error(
+      "ยังไม่มีข้อมูลสำรองในโฟลเดอร์ backups — ต้องรัน backup อย่างน้อย 1 ครั้งก่อน"
+    );
+    process.exit(1);
+  }
+
+  console.log("รายการ backup ที่มี (ใหม่สุดอยู่ล่าง):");
+  for (const name of folders) console.log(`  - ${name}`);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const folder = (
+    await rl.question("\nพิมพ์ชื่อโฟลเดอร์ที่จะกู้ (คัดลอกจากรายการข้างบน): ")
+  ).trim();
+  if (!folder || !existsSync(path.join(backupsRoot, folder, "tables"))) {
+    rl.close();
+    console.error(`ไม่พบข้อมูล backup ใน backups/${folder} — ตรวจชื่อโฟลเดอร์อีกครั้ง`);
+    process.exit(1);
+  }
+  console.log(
+    "\nจะกู้ข้อมูลเข้าโปรเจกต์ Supabase ที่ตั้งไว้ใน .env.local (แถวที่ id ตรงกันจะถูกเขียนทับ)"
+  );
+  const confirm = (await rl.question("พิมพ์ YES แล้วกด Enter เพื่อยืนยัน: ")).trim();
+  rl.close();
+  if (confirm.toUpperCase() !== "YES") {
+    console.log("ยกเลิกแล้ว — ไม่มีอะไรถูกแก้ไข");
+    process.exit(0);
+  }
+  backupArg = path.join("backups", folder);
 }
 const backupDir = path.isAbsolute(backupArg)
   ? backupArg
