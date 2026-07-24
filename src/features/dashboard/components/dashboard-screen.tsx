@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { ChevronRight, ListTodo, MapPin, Send, Sparkles, Wallet } from "lucide-react";
+import {
+  ChevronRight,
+  Hammer,
+  ListTodo,
+  MapPin,
+  Send,
+  Sparkles,
+  Wallet,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +30,9 @@ import {
 } from "@/features/land/types";
 import { fetchExpenses, fetchHousehold } from "@/features/budget/queries";
 import type { ExpenseWithRelations, Household } from "@/features/budget/types";
+import { fetchAllTasks, fetchPhases } from "@/features/project/queries";
+import { PHASE_STATUS_LABELS, splitDueTasks } from "@/features/project/types";
+import type { ProjectPhase, ProjectTask } from "@/features/project/types";
 
 type Progress2 = Map<string, { done: number; total: number }>;
 
@@ -33,6 +44,8 @@ export function DashboardScreen() {
   );
   const [household, setHousehold] = useState<Household | null>(null);
   const [expenses, setExpenses] = useState<ExpenseWithRelations[]>([]);
+  const [phases, setPhases] = useState<ProjectPhase[]>([]);
+  const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
@@ -40,17 +53,22 @@ export function DashboardScreen() {
   useEffect(() => {
     async function load() {
       try {
-        const [allLands, home, allExpenses] = await Promise.all([
-          fetchLands(),
-          fetchHousehold(),
-          fetchExpenses(),
-        ]);
+        const [allLands, home, allExpenses, allPhases, allTasks] =
+          await Promise.all([
+            fetchLands(),
+            fetchHousehold(),
+            fetchExpenses(),
+            fetchPhases(),
+            fetchAllTasks(),
+          ]);
         const progress = await fetchChecklistProgress(
           allLands.map((l) => l.id)
         );
         setLands(allLands);
         setHousehold(home);
         setExpenses(allExpenses);
+        setPhases(allPhases);
+        setProjectTasks(allTasks);
         setChecklistProgress(progress);
       } catch {
         setError("โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่");
@@ -106,6 +124,40 @@ export function DashboardScreen() {
       })
       .slice(0, 5);
   }, [lands, checklistProgress]);
+
+  // เฟสปัจจุบัน: เฟสแรกที่กำลังทำ ถ้ายังไม่เริ่มเลยใช้เฟสแรกที่ยังไม่เริ่ม
+  const currentPhase = useMemo(
+    () =>
+      phases.find((p) => p.status === "in_progress") ??
+      phases.find((p) => p.status === "not_started") ??
+      null,
+    [phases]
+  );
+
+  const currentPhaseProgress = useMemo(() => {
+    if (!currentPhase) return null;
+    const phaseTasks = projectTasks.filter(
+      (t) => t.phase_id === currentPhase.id
+    );
+    const done = phaseTasks.filter((t) => t.done).length;
+    return {
+      done,
+      total: phaseTasks.length,
+      percent: phaseTasks.length > 0 ? (done / phaseTasks.length) * 100 : 0,
+    };
+  }, [currentPhase, projectTasks]);
+
+  // งานมีกำหนด: เลยกำหนดขึ้นก่อน ตามด้วยใกล้ถึงกำหนด (7 วัน) รวมไม่เกิน 4 รายการ
+  const dueTaskRows = useMemo(() => {
+    const { overdue, dueSoon } = splitDueTasks(projectTasks);
+    const phaseName = new Map(phases.map((p) => [p.id, p.name]));
+    return [
+      ...overdue.map((t) => ({ task: t, overdue: true })),
+      ...dueSoon.map((t) => ({ task: t, overdue: false })),
+    ]
+      .slice(0, 4)
+      .map((row) => ({ ...row, phaseName: phaseName.get(row.task.phase_id) }));
+  }, [projectTasks, phases]);
 
   function askAi(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -288,6 +340,90 @@ export function DashboardScreen() {
                   <span className="shrink-0 font-medium">
                     {formatNumber(expense.amount)}
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* การ์ด: โครงการ (แผนแม่บท 10 เฟส) */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-lg">
+            <span className="flex items-center gap-2">
+              <Hammer className="size-5 text-primary" aria-hidden />
+              โครงการ
+            </span>
+            <Link
+              href="/project"
+              className="flex items-center text-sm font-normal text-primary"
+            >
+              ดูทั้งหมด
+              <ChevronRight className="size-4" aria-hidden />
+            </Link>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {currentPhase ? (
+            <Link
+              href={`/project/${currentPhase.id}`}
+              className="block space-y-1.5 rounded-lg p-2 -mx-2 hover:bg-muted"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  เฟส {currentPhase.sort_order}: {currentPhase.name}
+                </span>
+                <Badge variant="secondary" className="shrink-0">
+                  {PHASE_STATUS_LABELS[currentPhase.status]}
+                </Badge>
+              </div>
+              {currentPhaseProgress && (
+                <div className="flex items-center gap-2">
+                  <Progress
+                    value={currentPhaseProgress.percent}
+                    className="h-2 flex-1"
+                  />
+                  <span className="shrink-0 text-sm text-muted-foreground">
+                    {currentPhaseProgress.done}/{currentPhaseProgress.total} งาน
+                  </span>
+                </div>
+              )}
+            </Link>
+          ) : (
+            <p className="text-center text-muted-foreground">
+              ทุกเฟสเสร็จหมดแล้ว 🎉
+            </p>
+          )}
+          {dueTaskRows.length > 0 && (
+            <ul className="divide-y border-t pt-1 text-sm">
+              {dueTaskRows.map(({ task, overdue, phaseName }) => (
+                <li key={task.id}>
+                  <Link
+                    href={`/project/${task.phase_id}`}
+                    className="flex items-center justify-between gap-2 py-2"
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {task.title}
+                      {phaseName && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          — {phaseName}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0",
+                        overdue
+                          ? "font-medium text-destructive"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {overdue ? "เลยกำหนด " : ""}
+                      {formatDateThai(task.due_date ?? "")}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>

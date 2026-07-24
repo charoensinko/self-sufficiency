@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, Sprout } from "lucide-react";
+import { Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, isNavActive } from "./nav-items";
+import {
+  EXTRA_NAV_ITEMS,
+  NAV_ITEMS,
+  SETTINGS_NAV_ITEM,
+  isNavActive,
+} from "./nav-items";
 import { LogoutButton } from "./logout-button";
 
 /** เมนูซ้ายสำหรับจอ ≥1024px — จอเล็กใช้ BottomNav แทน */
@@ -13,10 +18,7 @@ export function Sidebar() {
 
   if (pathname === "/login") return null;
 
-  const items = [
-    ...NAV_ITEMS,
-    { href: "/settings", label: "ตั้งค่า", icon: Settings },
-  ];
+  const items = [...NAV_ITEMS, ...EXTRA_NAV_ITEMS, SETTINGS_NAV_ITEM];
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r bg-sidebar text-sidebar-foreground lg:flex">

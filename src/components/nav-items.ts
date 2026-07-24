@@ -1,6 +1,9 @@
 import {
+  Hammer,
   Home,
   MapPin,
+  Menu,
+  Settings,
   Sparkles,
   Wallet,
   type LucideIcon,
@@ -16,6 +19,33 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/ai", label: "AI ที่ปรึกษา", icon: Sparkles },
 ];
 
+/**
+ * โมดูลเพิ่มเติม (Dev Phase 2) — มือถือรวมอยู่ใต้แท็บ "เพิ่มเติม",
+ * desktop แสดงตรงๆ ใน Sidebar (เพิ่มรายการที่นี่ที่เดียวขึ้นทั้งสองโหมด)
+ */
+export const EXTRA_NAV_ITEMS: NavItem[] = [
+  { href: "/project", label: "โครงการ", icon: Hammer },
+];
+
+export const MORE_NAV_ITEM: NavItem = {
+  href: "/more",
+  label: "เพิ่มเติม",
+  icon: Menu,
+};
+
+export const SETTINGS_NAV_ITEM: NavItem = {
+  href: "/settings",
+  label: "ตั้งค่า",
+  icon: Settings,
+};
+
 export function isNavActive(href: string, pathname: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
+/** แท็บ "เพิ่มเติม" (มือถือ) active เมื่ออยู่ในโมดูลเพิ่มเติมหรือหน้าตั้งค่า */
+export function isMoreActive(pathname: string): boolean {
+  return [MORE_NAV_ITEM, SETTINGS_NAV_ITEM, ...EXTRA_NAV_ITEMS].some((item) =>
+    pathname.startsWith(item.href)
+  );
 }
