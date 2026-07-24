@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LayoutScreen } from "@/features/layout/components/layout-screen";
 
 export const metadata: Metadata = {
@@ -12,7 +13,10 @@ export default function FarmLayoutPage() {
       <p className="mb-4 text-sm text-muted-foreground">
         ทดลองวางโคก หนอง นา ตามสัดส่วน 30:30:30:10 ก่อนลงมือจริง
       </p>
-      <LayoutScreen />
+      {/* LayoutScreen ใช้ useSearchParams (?id=) จึงต้องมี Suspense ครอบ */}
+      <Suspense>
+        <LayoutScreen />
+      </Suspense>
     </main>
   );
 }

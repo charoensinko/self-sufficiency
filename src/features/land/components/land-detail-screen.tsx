@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, LandPlot, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,10 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  fetchLayoutsForLand,
+  type LinkedLayout,
+} from "@/features/layout/queries";
 import {
   deleteLand,
   fetchChecklist,
@@ -37,6 +42,7 @@ export function LandDetailScreen({ landId }: { landId: string }) {
   const [land, setLand] = useState<LandDetail | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItemState[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Map<string, string>>(new Map());
+  const [linkedLayouts, setLinkedLayouts] = useState<LinkedLayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -46,13 +52,15 @@ export function LandDetailScreen({ landId }: { landId: string }) {
     try {
       setError(null);
       const detail = await fetchLand(landId);
-      const [urls, items] = await Promise.all([
+      const [urls, items, layouts] = await Promise.all([
         fetchPhotoUrls(detail.land_photos.map((p) => p.storage_path)),
         fetchChecklist(landId),
+        fetchLayoutsForLand(landId),
       ]);
       setLand(detail);
       setPhotoUrls(urls);
       setChecklist(items);
+      setLinkedLayouts(layouts);
     } catch {
       setError("โหลดข้อมูลแปลงไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     } finally {
@@ -161,6 +169,48 @@ export function LandDetailScreen({ landId }: { landId: string }) {
           />
         </TabsContent>
       </Tabs>
+
+      {/* ผังโคกหนองนาที่ออกแบบไว้สำหรับแปลงนี้ (โมดูลผังแปลง) */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <LandPlot className="size-5 text-primary" aria-hidden />
+            ผังของแปลงนี้
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {linkedLayouts.length === 0 ? (
+            <div className="space-y-2 text-center">
+              <p className="text-muted-foreground">
+                ยังไม่มีผังที่ผูกกับแปลงนี้ —
+                ลองวางผังโคกหนองนาบนแปลงนี้ดูก่อนตัดสินใจ
+              </p>
+              <Button asChild variant="outline">
+                <Link href="/layout">ไปวางผังแปลง</Link>
+              </Button>
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {linkedLayouts.map((layout) => (
+                <li key={layout.id}>
+                  <Link
+                    href={`/layout?id=${layout.id}`}
+                    className="flex items-center justify-between gap-2 rounded-lg p-2 -mx-2 hover:bg-muted"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {layout.name}
+                    </span>
+                    <ChevronRight
+                      className="size-5 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent>

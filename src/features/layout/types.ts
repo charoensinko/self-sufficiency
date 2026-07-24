@@ -22,9 +22,28 @@ export type FarmLayout = {
   height_m: number;
   elements: LayoutElement[];
   notes: string | null;
+  /** รูปพื้นหลัง (โฉนด/ภาพดาวเทียม/สเก็ตช์) ใน bucket layout-images */
+  bg_image_path: string | null;
+  /** ความกว้างที่รูปแสดงบน canvas (เมตร) — ตั้งจากเส้นอ้างอิง */
+  bg_width_m: number | null;
+  /** เนื้อที่จริงตามโฉนด — ถ้ากรอกไว้ใช้เป็นตัวหาร % แทน กว้าง×ยาว */
+  deed_rai: number | null;
+  deed_ngan: number | null;
+  deed_wa: number | null;
 };
 
 export type LayoutDraft = Omit<FarmLayout, "id">;
+
+/** เนื้อที่โฉนดเป็น ตร.ม. (1 ไร่ = 4 งาน = 400 ตร.วา = 1,600 ตร.ม.) — null ถ้าไม่ได้กรอก */
+export function deedAreaSqm(
+  layout: Pick<LayoutDraft, "deed_rai" | "deed_ngan" | "deed_wa">
+): number | null {
+  const rai = layout.deed_rai ?? 0;
+  const ngan = layout.deed_ngan ?? 0;
+  const wa = layout.deed_wa ?? 0;
+  const sqm = (rai + ngan / 4 + wa / 400) * 1600;
+  return sqm > 0 ? sqm : null;
+}
 
 /** กลุ่มสัดส่วนตามหลัก 30:30:30:10 */
 export type ZoneGroup = "water" | "rice" | "forest" | "living";
@@ -117,6 +136,8 @@ export function elementArea(element: LayoutElement): number {
 
 export type LayoutStats = {
   plotArea: number;
+  /** true = ใช้เนื้อที่โฉนดเป็นตัวหาร (ไม่ใช่ กว้าง×ยาว ของ canvas) */
+  fromDeed: boolean;
   groups: {
     group: ZoneGroup;
     area: number;
@@ -131,9 +152,10 @@ export type LayoutStats = {
 export function computeStats(
   widthM: number,
   heightM: number,
-  elements: LayoutElement[]
+  elements: LayoutElement[],
+  deedSqm?: number | null
 ): LayoutStats {
-  const plotArea = widthM * heightM;
+  const plotArea = deedSqm ?? widthM * heightM;
   const areaByGroup = new Map<ZoneGroup, number>();
   let pondVolume = 0;
   let khokFillVolume = 0;
@@ -162,6 +184,7 @@ export function computeStats(
 
   return {
     plotArea,
+    fromDeed: deedSqm != null,
     groups,
     usedPercent: groups.reduce((sum, g) => sum + g.percent, 0),
     pondVolume,

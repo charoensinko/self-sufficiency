@@ -19,7 +19,8 @@ export function LayoutStatsCard({ stats }: { stats: LayoutStats }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          แปลงรวม {formatNumber(Math.round(stats.plotArea))} ตร.ม. (
+          {stats.fromDeed ? "เนื้อที่ตามโฉนด" : "แปลงรวม (กว้าง×ยาว)"}{" "}
+          {formatNumber(Math.round(stats.plotArea))} ตร.ม. (
           {sqmToRai(stats.plotArea).toFixed(1)} ไร่) · ใช้ไปแล้ว{" "}
           {Math.round(stats.usedPercent)}%
           {stats.usedPercent > 100 && " — เกิน 100% แสดงว่ามีโซนซ้อนทับกัน"}

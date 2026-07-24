@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Plus, Save, Trash2, Wand2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Copy, ImagePlus, Plus, Ruler, Save, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,13 +24,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   addLayout,
+  deleteBgImage,
   deleteLayout,
+  fetchBgImageUrl,
   fetchLandOptions,
   fetchLayouts,
   updateLayout,
+  uploadBgImage,
 } from "../queries";
 import {
   computeStats,
+  deedAreaSqm,
   starterElements,
   ZONE_CONFIG,
   ZONE_KINDS,
@@ -48,10 +59,16 @@ function toDraft(layout: FarmLayout): LayoutDraft {
     height_m: layout.height_m,
     elements: layout.elements,
     notes: layout.notes,
+    bg_image_path: layout.bg_image_path,
+    bg_width_m: layout.bg_width_m,
+    deed_rai: layout.deed_rai,
+    deed_ngan: layout.deed_ngan,
+    deed_wa: layout.deed_wa,
   };
 }
 
 export function LayoutScreen() {
+  const searchParams = useSearchParams();
   const [layouts, setLayouts] = useState<FarmLayout[]>([]);
   const [landOptions, setLandOptions] = useState<LandOption[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -64,6 +81,15 @@ export function LayoutScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteLayout, setConfirmDeleteLayout] = useState(false);
+  // รูปพื้นหลัง: signed URL + สัดส่วนภาพ (กว้าง/สูง) สำหรับคำนวณความสูงบน canvas
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [bgAspect, setBgAspect] = useState<number | null>(null);
+  const [uploadingBg, setUploadingBg] = useState(false);
+  // โหมดตั้งสเกล: ลากเส้นอ้างอิงบน canvas แล้วกรอกความยาวจริง
+  const [calibrating, setCalibrating] = useState(false);
+  const [calDrawnLength, setCalDrawnLength] = useState<number | null>(null);
+  const [calRealLength, setCalRealLength] = useState("");
+  const bgFileRef = useRef<HTMLInputElement>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -87,11 +113,45 @@ export function LayoutScreen() {
     void (async () => {
       const allLayouts = await reload();
       if (allLayouts.length > 0) {
-        setSelectedId(allLayouts[0].id);
-        setDraft(toDraft(allLayouts[0]));
+        // เปิดผังตาม ?id= (ลิงก์จากหน้ารายละเอียดแปลง) ถ้าไม่มีใช้ผังแรก
+        const targetId = searchParams.get("id");
+        const target =
+          allLayouts.find((l) => l.id === targetId) ?? allLayouts[0];
+        setSelectedId(target.id);
+        setDraft(toDraft(target));
       }
     })();
+    // ตั้งใจให้ทำงานครั้งเดียวตอนโหลด — ไม่ต้อง re-run เมื่อ searchParams เปลี่ยน
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reload]);
+
+  // โหลด signed URL + สัดส่วนของรูปพื้นหลังเมื่อผังที่เลือกเปลี่ยน
+  const bgPath = draft?.bg_image_path ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    if (!bgPath) {
+      setBgUrl(null);
+      setBgAspect(null);
+      return;
+    }
+    void (async () => {
+      const url = await fetchBgImageUrl(bgPath);
+      if (cancelled) return;
+      setBgUrl(url);
+      if (url) {
+        const img = new window.Image();
+        img.onload = () => {
+          if (!cancelled && img.naturalHeight > 0) {
+            setBgAspect(img.naturalWidth / img.naturalHeight);
+          }
+        };
+        img.src = url;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bgPath]);
 
   function patchDraft(patch: Partial<LayoutDraft>) {
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -159,6 +219,11 @@ export function LayoutScreen() {
         height_m: 80,
         elements: [],
         notes: null,
+        bg_image_path: null,
+        bg_width_m: null,
+        deed_rai: null,
+        deed_ngan: null,
+        deed_wa: null,
       };
       const id = await addLayout(newDraft);
       const allLayouts = await reload();
@@ -180,6 +245,7 @@ export function LayoutScreen() {
       return;
     }
     try {
+      if (draft?.bg_image_path) await deleteBgImage(draft.bg_image_path);
       await deleteLayout(selectedId);
       const allLayouts = await reload();
       const next = allLayouts[0] ?? null;
@@ -228,6 +294,78 @@ export function LayoutScreen() {
     setSelectedElementId(null);
   }
 
+  /** อัปโหลด/เปลี่ยนรูปพื้นหลัง — บันทึกลง DB ทันทีกัน storage กับ DB ไม่ตรงกัน */
+  async function handleBgUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !draft || !selectedId) return;
+    setUploadingBg(true);
+    try {
+      const oldPath = draft.bg_image_path;
+      const path = await uploadBgImage(file);
+      const next: LayoutDraft = {
+        ...draft,
+        bg_image_path: path,
+        bg_width_m: draft.bg_width_m ?? draft.width_m,
+      };
+      await updateLayout(selectedId, next);
+      if (oldPath) await deleteBgImage(oldPath);
+      setDraft(next);
+      setDirty(false);
+      setLayouts((prev) =>
+        prev.map((l) => (l.id === selectedId ? { ...l, ...next } : l))
+      );
+      toast.success("ใส่รูปพื้นหลังแล้ว — กดปุ่มตั้งสเกลเพื่อให้ขนาดตรงจริง");
+    } catch {
+      toast.error("อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setUploadingBg(false);
+    }
+  }
+
+  async function handleBgRemove() {
+    if (!draft || !selectedId || !draft.bg_image_path) return;
+    try {
+      const oldPath = draft.bg_image_path;
+      const next: LayoutDraft = {
+        ...draft,
+        bg_image_path: null,
+        bg_width_m: null,
+      };
+      await updateLayout(selectedId, next);
+      await deleteBgImage(oldPath);
+      setDraft(next);
+      setDirty(false);
+      setCalibrating(false);
+      setLayouts((prev) =>
+        prev.map((l) => (l.id === selectedId ? { ...l, ...next } : l))
+      );
+      toast.success("ลบรูปพื้นหลังแล้ว");
+    } catch {
+      toast.error("ลบรูปไม่สำเร็จ กรุณาลองใหม่");
+    }
+  }
+
+  /** จบการลากเส้นอ้างอิง → เปิด dialog ถามความยาวจริง */
+  function handleCalibrateDone(drawnLengthM: number) {
+    setCalDrawnLength(drawnLengthM);
+    setCalRealLength("");
+  }
+
+  function applyCalibration() {
+    if (!draft || calDrawnLength == null) return;
+    const real = Number(calRealLength);
+    if (!real || real <= 0) return;
+    const currentWidth = draft.bg_width_m ?? draft.width_m;
+    patchDraft({
+      bg_width_m:
+        Math.round(currentWidth * (real / calDrawnLength) * 100) / 100,
+    });
+    setCalDrawnLength(null);
+    setCalibrating(false);
+    toast.success("ตั้งสเกลรูปแล้ว — อย่าลืมกดบันทึกผัง");
+  }
+
   const selectedElement = useMemo(
     () => draft?.elements.find((el) => el.id === selectedElementId) ?? null,
     [draft, selectedElementId]
@@ -236,7 +374,12 @@ export function LayoutScreen() {
   const stats = useMemo(
     () =>
       draft
-        ? computeStats(draft.width_m, draft.height_m, draft.elements)
+        ? computeStats(
+            draft.width_m,
+            draft.height_m,
+            draft.elements,
+            deedAreaSqm(draft)
+          )
         : null,
     [draft]
   );
@@ -282,11 +425,20 @@ export function LayoutScreen() {
           heightM={draft.height_m}
           elements={draft.elements}
           selectedId={selectedElementId}
+          bgUrl={bgUrl}
+          bgWidthM={draft.bg_width_m ?? draft.width_m}
+          bgHeightM={
+            bgAspect ? (draft.bg_width_m ?? draft.width_m) / bgAspect : null
+          }
+          calibrating={calibrating}
           onSelect={setSelectedElementId}
           onMove={(id, x, y) => patchElement(id, { x, y })}
+          onCalibrateDone={handleCalibrateDone}
         />
         <p className="text-center text-sm text-muted-foreground">
-          แตะโซนเพื่อเลือก แล้วลากย้ายได้เลย · ปรับขนาดในแผง &quot;โซนที่เลือก&quot;
+          {calibrating
+            ? "ลากเส้นทับระยะที่รู้ความยาวจริงบนรูป เช่น แนวเขตด้านหนึ่ง แล้วกรอกความยาวจริง"
+            : "แตะโซนเพื่อเลือก แล้วลากย้ายได้เลย · ปรับขนาดในแผง \"โซนที่เลือก\""}
         </p>
         <div className="hidden lg:block">{stats && <LayoutStatsCard stats={stats} />}</div>
       </div>
@@ -353,6 +505,83 @@ export function LayoutScreen() {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>
+                เนื้อที่จริงตามโฉนด (ถ้ากรอก จะใช้คิด % แทน กว้าง×ยาว)
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["deed_rai", "ไร่"],
+                    ["deed_ngan", "งาน"],
+                    ["deed_wa", "ตร.วา"],
+                  ] as const
+                ).map(([field, unit]) => (
+                  <div key={field} className="space-y-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      inputMode="decimal"
+                      aria-label={`เนื้อที่ (${unit})`}
+                      value={draft[field] ?? ""}
+                      onChange={(e) =>
+                        patchDraft({
+                          [field]:
+                            e.target.value === ""
+                              ? null
+                              : Math.max(0, Number(e.target.value) || 0),
+                        })
+                      }
+                      className="h-12 text-base"
+                    />
+                    <p className="text-center text-xs text-muted-foreground">
+                      {unit}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>รูปพื้นหลัง (โฉนด/ภาพดาวเทียม/สเก็ตช์)</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  disabled={uploadingBg}
+                  onClick={() => bgFileRef.current?.click()}
+                >
+                  <ImagePlus aria-hidden />
+                  {uploadingBg
+                    ? "กำลังอัปโหลด..."
+                    : draft.bg_image_path
+                      ? "เปลี่ยนรูป"
+                      : "ใส่รูปพื้นหลัง"}
+                </Button>
+                {draft.bg_image_path && (
+                  <>
+                    <Button
+                      variant={calibrating ? "default" : "outline"}
+                      onClick={() => setCalibrating((prev) => !prev)}
+                    >
+                      <Ruler aria-hidden />
+                      {calibrating ? "ยกเลิกตั้งสเกล" : "ตั้งสเกลรูป"}
+                    </Button>
+                    <Button variant="outline" onClick={handleBgRemove}>
+                      <X aria-hidden />
+                      ลบรูป
+                    </Button>
+                  </>
+                )}
+              </div>
+              <input
+                ref={bgFileRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => void handleBgUpload(e)}
+                className="hidden"
+              />
+            </div>
+
             {landOptions.length > 0 && (
               <div className="space-y-2">
                 <Label>ผูกกับแปลงที่ดิน (ถ้ามี)</Label>
@@ -548,6 +777,54 @@ export function LayoutScreen() {
 
         <div className="lg:hidden">{stats && <LayoutStatsCard stats={stats} />}</div>
       </div>
+
+      {/* dialog ถามความยาวจริงของเส้นอ้างอิงที่ลาก */}
+      <Dialog
+        open={calDrawnLength != null}
+        onOpenChange={(open) => {
+          if (!open) setCalDrawnLength(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>เส้นที่ลากยาวจริงกี่เมตร?</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              applyCalibration();
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="cal-length">ความยาวจริง (เมตร)</Label>
+              <Input
+                id="cal-length"
+                type="number"
+                min="0.1"
+                step="0.1"
+                inputMode="decimal"
+                value={calRealLength}
+                onChange={(e) => setCalRealLength(e.target.value)}
+                placeholder="เช่น 40"
+                className="h-12 text-base"
+                autoFocus
+                required
+              />
+              <p className="text-sm text-muted-foreground">
+                ระบบจะย่อ/ขยายรูปพื้นหลังให้ระยะบนรูปตรงกับความยาวจริงนี้
+              </p>
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!calRealLength || Number(calRealLength) <= 0}
+            >
+              ตั้งสเกล
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

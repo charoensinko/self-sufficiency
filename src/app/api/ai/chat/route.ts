@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { splitDueTasks } from "@/features/project/types";
-import { computeStats, sqmToRai } from "@/features/layout/types";
+import { computeStats, deedAreaSqm, sqmToRai } from "@/features/layout/types";
 import type { LayoutElement } from "@/features/layout/types";
 
 export const runtime = "nodejs";
@@ -106,7 +106,7 @@ async function buildContext(supabase: SupabaseClient): Promise<string> {
       .limit(15),
     supabase
       .from("farm_layouts")
-      .select("name, width_m, height_m, elements")
+      .select("name, width_m, height_m, elements, deed_rai, deed_ngan, deed_wa")
       .limit(5),
   ]);
 
@@ -270,7 +270,12 @@ async function buildContext(supabase: SupabaseClient): Promise<string> {
       const stats = computeStats(
         Number(layout.width_m),
         Number(layout.height_m),
-        (layout.elements ?? []) as LayoutElement[]
+        (layout.elements ?? []) as LayoutElement[],
+        deedAreaSqm({
+          deed_rai: layout.deed_rai != null ? Number(layout.deed_rai) : null,
+          deed_ngan: layout.deed_ngan != null ? Number(layout.deed_ngan) : null,
+          deed_wa: layout.deed_wa != null ? Number(layout.deed_wa) : null,
+        })
       );
       const percents = stats.groups
         .map((g) => `${Math.round(g.percent)}%`)
