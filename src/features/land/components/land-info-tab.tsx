@@ -29,7 +29,9 @@ export function LandInfoTab({
     .join(" ");
 
   return (
-    <div className="space-y-4">
+    // desktop: ซ้าย = ข้อมูล+โน้ต / ขวา = แผนที่+รูปภาพ (มือถือเรียงต่อกันตามเดิม)
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
+      <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">รายละเอียด</CardTitle>
@@ -71,7 +73,9 @@ export function LandInfoTab({
           </CardContent>
         </Card>
       )}
+      </div>
 
+      <div className="space-y-4">
       {land.lat != null && land.lng != null && (
         <Card>
           <CardHeader>
@@ -92,7 +96,7 @@ export function LandInfoTab({
             <iframe
               src={mapEmbedUrl(land.lat, land.lng)}
               title={`แผนที่ ${land.name}`}
-              className="h-64 w-full rounded-lg border-0"
+              className="h-64 w-full rounded-lg border-0 lg:h-80"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
@@ -140,6 +144,7 @@ export function LandInfoTab({
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }

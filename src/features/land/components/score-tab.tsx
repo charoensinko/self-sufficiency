@@ -117,6 +117,7 @@ export function ScoreTab({
         </CardContent>
       </Card>
 
+      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
       {CRITERIA.map((criterion) => {
         const current = values[criterion.key];
         return (
@@ -156,6 +157,7 @@ export function ScoreTab({
           </Card>
         );
       })}
+      </div>
 
       <Button onClick={handleSave} className="w-full" disabled={saving}>
         {saving ? "กำลังบันทึก..." : "บันทึกคะแนน"}

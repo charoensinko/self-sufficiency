@@ -90,6 +90,7 @@ export function ChecklistTab({
         </CardContent>
       </Card>
 
+      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
       {groups.map(([category, groupItems]) => {
         const groupDone = groupItems.filter((item) => item.checked).length;
         return (
@@ -176,6 +177,7 @@ export function ChecklistTab({
           </Card>
         );
       })}
+      </div>
     </div>
   );
 }
